@@ -1,0 +1,1 @@
+Diagrams of how parts connect (frontend ↔ backend ↔ database) 
