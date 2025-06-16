@@ -24,7 +24,9 @@ def extract_features(image_path):
         features = model(img_t)
     return features.numpy().flatten()
 
-def find_similar_items(target_path, all_paths):
+
+
+def recognize_image(target_path, all_paths):
     target_feat = extract_features(target_path).reshape(1, -1)
     all_feats = [extract_features(p) for p in all_paths]
     similarities = cosine_similarity(target_feat, all_feats)[0]
