@@ -1,10 +1,10 @@
 from flask import Flask, request, render_template, redirect, url_for
 import os
-from vision import recognize_image  # You’ll write this
-from db import search_inventory    # You’ll write this
+from vision import recognize_image  
+from db import search_inventory    
 
 app = Flask(__name__)
-UPLOAD_FOLDER = 'test_images'
+UPLOAD_FOLDER = 'static'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route('/', methods=['GET', 'POST'])
@@ -23,8 +23,12 @@ def upload_image():
             all_paths = [os.path.join(app.config['UPLOAD_FOLDER'], f) for f in os.listdir(app.config['UPLOAD_FOLDER']) if f != file.filename]
             item_vector = recognize_image(filepath, all_paths)
 
-            result = search_inventory(item_vector)   # Compare to inventory
-
-            return render_template('results.html', result=result)
+            matches = search_inventory(item_vector)
+            return render_template('results.html', matches=matches)
 
     return render_template('index.html')
+
+
+#run the app with debugging
+if __name__ == '__main__':
+    app.run(debug=True)

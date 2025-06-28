@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Match Results</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        .match {
+            margin: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            display: inline-block;
+        }
+        .match img {
+            max-height: 200px;
+        }
+        .score {
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>Matching Results</h1>
+
+    {% if matches %}
+        {% for path, score in matches %}
+            <div class="match">
+                <img src="{{ url_for('static', filename=path.split('/')[-1]) }}" alt="Match">
+                <p class="score">Similarity: {{ "%.2f"|format(score * 100) }}%</p>
+                <p>{{ path.split('/')[-1] }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No matches found.</p>
+    {% endif %}
+
+    <br><br>
+    <a href="/">Try another image</a>
+</body>
+</html>
