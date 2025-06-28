@@ -9,7 +9,8 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Load model once
-model = resnet18(pretrained=True)
+from torchvision.models import ResNet18_Weights
+model = resnet18(weights=ResNet18_Weights.DEFAULT)
 model.eval()
 
 transform = transforms.Compose([
@@ -17,12 +18,18 @@ transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
+feature_cache = {}
+
 def extract_features(image_path):
+    if image_path in feature_cache:
+        return feature_cache[image_path]
     image = Image.open(image_path).convert("RGB")
     img_t = transform(image).unsqueeze(0)
     with torch.no_grad():
         features = model(img_t)
-    return features.numpy().flatten()
+    feat_array = features.numpy().flatten()
+    feature_cache[image_path] = feat_array
+    return feat_array
 
 
 

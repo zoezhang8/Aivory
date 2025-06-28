@@ -19,10 +19,12 @@ def upload_image():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(filepath)
 
-            item_vector = recognize_image(filepath)  # Feature extraction
+            # This gathers all image paths to compare to
+            all_paths = [os.path.join(app.config['UPLOAD_FOLDER'], f) for f in os.listdir(app.config['UPLOAD_FOLDER']) if f != file.filename]
+            item_vector = recognize_image(filepath, all_paths)
+
             result = search_inventory(item_vector)   # Compare to inventory
 
-            return result  # Later, make it render HTML with the results
+            return render_template('results.html', result=result)
 
     return render_template('index.html')
-
