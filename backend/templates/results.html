@@ -23,12 +23,20 @@
     <h1>Matching Results</h1>
 
     {% if matches %}
-        {% for path, score in matches %}
-            <div class="match">
-                <img src="{{ url_for('static', filename=path.split('/')[-1]) }}" alt="Match">
-                <p class="score">Similarity: {{ "%.2f"|format(score * 100) }}%</p>
-                <p>{{ path.split('/')[-1] }}</p>
-            </div>
+        <h2>Your Uploaded Image (Top Match)</h2>
+        <div class="match">
+            <img src="{{ url_for('static', filename=matches[0][0].split('/')[-1]) }}" alt="Top Match">
+            <p class="score">Similarity: {{ "%.2f"|format(matches[0][1] * 100) }}%</p>
+            <p>{{ matches[0][0].split('/')[-1] }}</p>
+        </div>
+
+        <h2>Other Similar Matches</h2>
+        {% for path, score in matches[1:] %}
+        <div class="match">
+            <img src="{{ url_for('static', filename=path.split('/')[-1]) }}" alt="Match">
+            <p class="score">Similarity: {{ "%.2f"|format(score * 100) }}%</p>
+            <p>{{ path.split('/')[-1] }}</p>
+        </div>
         {% endfor %}
     {% else %}
         <p>No matches found.</p>

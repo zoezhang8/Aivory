@@ -21,14 +21,23 @@ transform = transforms.Compose([
 # Optional cache to speed up repeat comparisons
 feature_cache = {}
 
+from PIL import UnidentifiedImageError
+
 def extract_features(image_path):
     if image_path in feature_cache:
         return feature_cache[image_path]
-    image = Image.open(image_path).convert("RGB")
-    img_t = transform(image).unsqueeze(0)  # shape: [1, 3, 224, 224]
-
+    try:
+        image = Image.open(image_path).convert("RGB")
+    except UnidentifiedImageError as e:
+        print(f"[ERROR] Cannot identify image file: {image_path} — {e}")
+        return np.zeros((512,))  # return dummy vector to avoid crashing
+    except Exception as e:
+        print(f"[ERROR] Unexpected error loading image {image_path}: {e}")
+        return np.zeros((512,))
+    
+    img_t = transform(image).unsqueeze(0)
     with torch.no_grad():
-        features = model(img_t)  # shape: [1, 512, 1, 1]
+        features = model(img_t)
     feat_array = features.squeeze().cpu().numpy()
     feature_cache[image_path] = feat_array
     return feat_array
