@@ -9,6 +9,7 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'static'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+
 @app.route('/', methods=['GET', 'POST'])
 def upload_image():
     if request.method == 'POST':
@@ -17,24 +18,34 @@ def upload_image():
         file = request.files['file']
         if file.filename == '':
             return "No selected file"
-        if file:
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            file.save(filepath)
 
-            # This gathers all image paths to compare to
-            all_paths = [os.path.join(app.config['UPLOAD_FOLDER'], f) for f in os.listdir(app.config['UPLOAD_FOLDER'])]
-            item_vector = recognize_image(filepath, all_paths)
+        filename = file.filename
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
 
-            matches = search_inventory(item_vector)
-            if not matches or matches[0][1] < 0.5:  # You can adjust the threshold
-                return redirect(f"/add-item?image={file.filename}")
+        # Gather all image paths including the uploaded one
+        all_paths = [os.path.join(app.config['UPLOAD_FOLDER'], f) 
+                     for f in os.listdir(app.config['UPLOAD_FOLDER'])]
 
-            return render_template('results.html', matches=matches)
+        # Run recognition and get similarity scores
+        matches = search_inventory(recognize_image(filepath, all_paths))
+
+        # Check if any OTHER image is similar enough (exclude uploaded file)
+        other_matches = [
+            (path, score) for path, score in matches
+            if os.path.basename(path) != filename and score >= 0.9
+        ]
+
+        if other_matches:
+            # Show matches including uploaded image
+            return render_template('results.html', matches=matches, uploaded=filename)
+        else:
+            # Redirect to add item if no similar existing items
+            return redirect(url_for('add_item', image=filename))
 
     return render_template('index.html')
 
 
-#SHOW FORM AND SAVE NEW PRODUCT INFO
 @app.route('/add-item', methods=['GET', 'POST'])
 def add_item():
     if request.method == 'POST':
@@ -43,7 +54,6 @@ def add_item():
         tags = request.form.get('tags')
         image_filename = request.form.get('image')
 
-        # Save to JSON file
         inventory_path = 'inventory.json'
         if os.path.exists(inventory_path):
             with open(inventory_path, 'r') as f:
@@ -67,7 +77,5 @@ def add_item():
     return render_template('add_item.html', image=image_filename)
 
 
-
-#run the app with debugging
 if __name__ == '__main__':
     app.run(debug=True)
