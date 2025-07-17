@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Item Details</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        .item-detail {
+            border: 1px solid #ccc;
+            padding: 20px;
+            display: inline-block;
+        }
+        .item-detail img {
+            max-height: 250px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="item-detail">
+        <img src="{{ url_for('static', filename=item.image) }}" alt="Product Image">
+        <h2>{{ item.name }}</h2>
+        <p><strong>Price:</strong> ${{ item.price }}</p>
+        <p><strong>SKU:</strong> {{ item.sku }}</p>
+        <p><strong>Description:</strong> {{ item.description }}</p>
+    </div>
+
+    <br><br>
+    <a href="{{ url_for('upload_image') }}">← Back to Results</a>
+</body>
+</html>

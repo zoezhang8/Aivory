@@ -1,48 +1,92 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Match Results</title>
+    <title>Similarity Results</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 40px;
+        }
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
         .match {
-            margin: 20px;
+            border: 1px solid #ccc;
             padding: 10px;
-            border: 1px solid #ddd;
-            display: inline-block;
+            width: 180px;
+            transition: transform 0.2s ease;
+        }
+        .match:hover {
+            transform: scale(1.05);
         }
         .match img {
+            max-width: 100%;
+            height: auto;
+        }
+        .match p {
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        .uploaded-section {
+            margin-bottom: 40px;
+        }
+        .uploaded-section img {
             max-height: 200px;
         }
-        .score {
-            font-weight: bold;
-            color: green;
+        .add-button {
+            padding: 10px 20px;
+            background-color: #f44336;
+            color: white;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <h1>Matching Results</h1>
 
-    {% if matches %}
-        <h2>Your Uploaded Image (Top Match)</h2>
-        <div class="match">
-            <img src="{{ url_for('static', filename=matches[0][0].split('/')[-1]) }}" alt="Top Match">
-            <p class="score">Similarity: {{ "%.2f"|format(matches[0][1] * 100) }}%</p>
-            <p>{{ matches[0][0].split('/')[-1] }}</p>
-        </div>
+    {% if uploaded %}
+        <div class="uploaded-section">
+            <h2>Your Uploaded Image (Top Match)</h2>
+            <div class="match">
+                <img src="{{ url_for('static', filename=uploaded) }}" alt="Uploaded">
+                <p>{{ uploaded }}</p>
+            </div>
 
-        <h2>Other Similar Matches</h2>
-        {% for path, score in matches[1:] %}
-        <div class="match">
-            <img src="{{ url_for('static', filename=path.split('/')[-1]) }}" alt="Match">
-            <p class="score">Similarity: {{ "%.2f"|format(score * 100) }}%</p>
-            <p>{{ path.split('/')[-1] }}</p>
+            <p>Don’t see what you're looking for?</p>
+            <form action="{{ url_for('add_item') }}" method="get">
+                <input type="hidden" name="image" value="{{ uploaded }}">
+                <input type="submit" value="Add This as a New Product" class="add-button">
+            </form>
         </div>
-        {% endfor %}
+    {% endif %}
+
+    {% if matches %}
+        <h2>Other Similar Matches</h2>
+        <div class="gallery">
+            {% for path, score in matches %}
+                {% if path.split('/')[-1] != uploaded %}
+                    <div class="match">
+                        <a href="{{ url_for('view_item', image=path.split('/')[-1]) }}">
+                            <img src="{{ url_for('static', filename=path.split('/')[-1]) }}" alt="Match">
+                            <p>{{ path.split('/')[-1] }}</p>
+                            <p>Similarity Score: {{ '%.2f'|format(score) }}</p>
+                        </a>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
     {% else %}
-        <p>No matches found.</p>
+        <p>No other similar matches found.</p>
     {% endif %}
 
     <br><br>
-    <a href="/">Try another image</a>
+    <a href="{{ url_for('upload_image') }}">← Upload Another Image</a>
 </body>
 </html>

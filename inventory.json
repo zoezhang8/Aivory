@@ -4,5 +4,23 @@
         "price": "300",
         "tags": "SKU",
         "image": "test4.jpg"
+    },
+    {
+        "name": "black planter",
+        "price": "100",
+        "tags": "SKU",
+        "image": "test4.jpg"
+    },
+    {
+        "name": "weaved planter",
+        "price": "200",
+        "tags": "SKU",
+        "image": "sample.jpg"
+    },
+    {
+        "name": "sample.jpg",
+        "price": "100",
+        "tags": "sku",
+        "image": "sample.jpg"
     }
 ]
