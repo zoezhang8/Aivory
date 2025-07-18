@@ -8,6 +8,7 @@ from db import search_inventory
 app = Flask(__name__)
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+INVENTORY_PATH = os.path.join(os.path.dirname(__file__), 'inventory.json')
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -44,45 +45,53 @@ def upload_image():
 
 @app.route('/add-item', methods=['GET', 'POST'])
 def add_item():
+
     if request.method == 'POST':
         name = request.form.get('name')
         price = request.form.get('price')
-        sku = request.form.get('sku')  # NEW
-        description = request.form.get('description')  # NEW
+        sku = request.form.get('sku')
+        description = request.form.get('description')
         tags = request.form.get('tags')
         image_filename = request.form.get('image')
 
-        inventory_path = 'inventory.json'
-        if os.path.exists(inventory_path):
-            with open(inventory_path, 'r') as f:
+        if not all([name, price, sku, description, tags, image_filename]):
+            return "Missing fields", 400
+
+        # Load existing inventory or create new
+        if os.path.exists(INVENTORY_PATH):
+            with open(INVENTORY_PATH, 'r') as f:
                 inventory = json.load(f)
         else:
             inventory = []
 
+        # Append new item
         inventory.append({
             'name': name,
             'price': price,
-            'sku': sku,  # NEW
-            'description': description,  # NEW
+            'sku': sku,
+            'description': description,
             'tags': tags,
             'image': image_filename
         })
 
-        with open(inventory_path, 'w') as f:
+        print("[DEBUG] Writing to:", INVENTORY_PATH)
+
+        # Save to file
+        with open(INVENTORY_PATH, 'w') as f:
             json.dump(inventory, f, indent=4)
 
+        print(f"[INFO] Added item to inventory: {image_filename}")
         return redirect(url_for('upload_image'))
 
-
+    # For GET request, render the form
     image_filename = request.args.get('image')
     return render_template('add_item.html', image=image_filename)
 
 
 @app.route('/item/<image>')
 def view_item(image):
-    inventory_path = 'inventory.json'
-    if os.path.exists(inventory_path):
-        with open(inventory_path, 'r') as f:
+    if os.path.exists(INVENTORY_PATH):
+        with open(INVENTORY_PATH, 'r') as f:
             inventory = json.load(f)
             for item in inventory:
                 if item['image'] == image:
@@ -92,29 +101,3 @@ def view_item(image):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-@app.route('/results/<uploaded>')
-def results(uploaded):
-    uploaded_path = os.path.join('static', uploaded)
-    
-    # Compare uploaded image to all others in /static
-    matches = []
-    for filename in os.listdir('static'):
-        if filename == uploaded:
-            continue
-        path = os.path.join('static', filename)
-        score = compute_similarity(uploaded_path, path)
-        matches.append((filename, score))
-    
-    # Sort and set a threshold
-    matches.sort(key=lambda x: x[1], reverse=True)
-    SIMILARITY_THRESHOLD = 0.75
-    show_add_button = all(score < SIMILARITY_THRESHOLD for _, score in matches[:3])
-
-    return render_template(
-        'results.html',
-        uploaded=uploaded,
-        matches=matches,
-        show_add_button=show_add_button
-    )
