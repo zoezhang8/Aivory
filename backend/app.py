@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, send_from_directory
 import os
 import json
 
@@ -6,8 +6,18 @@ from vision import recognize_image
 from db import search_inventory    
 
 app = Flask(__name__)
+
+# Permanent folder for saved products
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Temporary folder for uploads before confirmation
+TEMP_FOLDER = os.path.join(os.path.dirname(__file__), 'temp')
+os.makedirs(TEMP_FOLDER, exist_ok=True)
+app.config['TEMP_FOLDER'] = TEMP_FOLDER
+
+# Inventory file
 INVENTORY_PATH = os.path.join(os.path.dirname(__file__), 'inventory.json')
 
 
@@ -21,31 +31,29 @@ def upload_image():
             return "No selected file"
 
         filename = file.filename
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
 
-        # Gather all image paths including the uploaded one
+        # Clear the temp folder before saving the new upload
+        for temp_file in os.listdir(app.config['TEMP_FOLDER']):
+            os.remove(os.path.join(app.config['TEMP_FOLDER'], temp_file))
+
+        # Save uploaded file to temp/
+        temp_path = os.path.join(app.config['TEMP_FOLDER'], filename)
+        file.save(temp_path)
+
+        # Gather only inventory images from static/
         all_paths = [os.path.join(app.config['UPLOAD_FOLDER'], f) 
                      for f in os.listdir(app.config['UPLOAD_FOLDER'])]
 
-        # Run recognition and get similarity scores
-        matches = search_inventory(recognize_image(filepath, all_paths))
-
-        # Check if any OTHER image is similar enough (exclude uploaded file)
-        other_matches = [
-            (path, score) for path, score in matches
-            if os.path.basename(path) != filename and score >= 0.9
-        ]
+        # Run image recognition and similarity comparison
+        matches = search_inventory(recognize_image(temp_path, all_paths))
 
         return render_template('results.html', matches=matches, uploaded=filename)
-
 
     return render_template('index.html')
 
 
 @app.route('/add-item', methods=['GET', 'POST'])
 def add_item():
-
     if request.method == 'POST':
         name = request.form.get('name')
         price = request.form.get('price')
@@ -57,14 +65,14 @@ def add_item():
         if not all([name, price, sku, description, tags, image_filename]):
             return "Missing fields", 400
 
-        # Load existing inventory or create new
+        # Load or initialize inventory
         if os.path.exists(INVENTORY_PATH):
             with open(INVENTORY_PATH, 'r') as f:
                 inventory = json.load(f)
         else:
             inventory = []
 
-        # Append new item
+        # Append new product
         inventory.append({
             'name': name,
             'price': price,
@@ -74,16 +82,20 @@ def add_item():
             'image': image_filename
         })
 
-        print("[DEBUG] Writing to:", INVENTORY_PATH)
+        # Move image from temp → static
+        src_path = os.path.join(app.config['TEMP_FOLDER'], image_filename)
+        dst_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+        if os.path.exists(src_path):
+            os.rename(src_path, dst_path)
 
-        # Save to file
+        # Save inventory to disk
         with open(INVENTORY_PATH, 'w') as f:
             json.dump(inventory, f, indent=4)
 
         print(f"[INFO] Added item to inventory: {image_filename}")
         return redirect(url_for('upload_image'))
 
-    # For GET request, render the form
+    # GET: Show form with uploaded image
     image_filename = request.args.get('image')
     return render_template('add_item.html', image=image_filename)
 
@@ -97,6 +109,11 @@ def view_item(image):
                 if item['image'] == image:
                     return render_template('item_detail.html', item=item)
     return "Item not found", 404
+
+
+@app.route('/temp/<filename>')
+def temp_file(filename):
+    return send_from_directory(app.config['TEMP_FOLDER'], filename)
 
 
 if __name__ == '__main__':

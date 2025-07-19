@@ -6,5 +6,21 @@
         "description": "description4",
         "tags": "SKU, sku",
         "image": "ribbedplanter.jpg"
+    },
+    {
+        "name": "White Planter",
+        "price": "300",
+        "sku": "SKU",
+        "description": "description white",
+        "tags": "SKU, sku",
+        "image": "whiteplanter.jpg"
+    },
+    {
+        "name": "white planter 2",
+        "price": "200",
+        "sku": "SKU",
+        "description": "descriptiosdagiksnda",
+        "tags": "SKU, sku",
+        "image": "whitep.jpg"
     }
 ]

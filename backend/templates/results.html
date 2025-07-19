@@ -53,9 +53,9 @@
 
     {% if uploaded %}
         <div class="uploaded-section">
-            <h2>Your Uploaded Image (Top Match)</h2>
+            <h2>Your Uploaded Image</h2>
             <div class="match">
-                <img src="{{ url_for('static', filename=uploaded) }}" alt="Uploaded">
+                <img src="{{ url_for('temp_file', filename=uploaded) }}" alt="Uploaded">
                 <p>{{ uploaded }}</p>
             </div>
 
